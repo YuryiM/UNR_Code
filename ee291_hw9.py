@@ -29,7 +29,7 @@ print("y =",round(math.exp(fit[1]),3)," * e^(",round(fit[0],3),"x)")
 
 err = 0
 for i in range(len(x)):
-    err += (np.log(y)[i] - round(fit[1], 3) - round(fit[0],3) * x[i])**2
+    err += (np.log(y)[i] - fit[1] - fit[0] * x[i])**2
 print("Error:",round(err,3),"%")
 
 # # Question 3 - 
@@ -43,5 +43,5 @@ print("y = (", round(fit[1], 3), " + ",round(fit[0], 3),"x)^-1")
 
 err = 0
 for i in range(len(x)):
-    err += (yinv[i] - round(fit[1], 3) - round(fit[0],3) * x[i])**2
+    err += (yinv[i] - fit[1] - fit[0] * x[i])**2
 print("Error:",round(err,3),"%")
