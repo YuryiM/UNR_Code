@@ -1,4 +1,4 @@
-# Question 1
+# Lagrangian Interpolation
 
 # x = [1,3,5,8,12]
 # y = [20,28,None,35,41]
@@ -55,6 +55,3 @@ for i in range(0,5):
     if i != 2:
         sum +=  L[i] * y[i]
 print(sum)
-
-
-# Question 2
