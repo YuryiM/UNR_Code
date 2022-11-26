@@ -37,6 +37,9 @@ x = Data['Irradiance']
 y = Data['Kw'] 
 time = Data['Time']
 axis[0].scatter(x,y, None, 'k')
+axis[0].set_ylabel("Irradiance")
+axis[0].set_xlabel("Kw")
+axis[0].set_title("Day 2 Model")
 
 # Calculate error
 err = []
