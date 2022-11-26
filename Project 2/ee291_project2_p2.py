@@ -17,9 +17,9 @@ axis[3].set_title("Day 1 Model")
 axis[3].legend(loc="upper left")
 
 # Create poly 3 regression
-x_train1 = np.array(x)
-y_train1 = np.array(y)
-fit1 = np.polyfit(x_train1, y_train1, 3)
+x_train = np.array(x)
+y_train = np.array(y)
+fit1 = np.polyfit(x_train, y_train, 3)
 print("y =", round(fit1[0],3),"x^3 +", round(fit1[1],3),"x^2 +", round(fit1[2],3),"x +", round(fit1[3],3))
 def poly3Reg(x):
     return fit1[0] * pow(x,3) + fit1[1] * pow(x,2) + fit1[2] * x + fit1[3]
@@ -32,9 +32,7 @@ axis[3].plot(xr,yr,'r', label="poly 3")
 
 
 # Create poly 5 regression
-x_train2 = np.array(x)
-y_train2 = np.array(y)
-fit2 = np.polyfit(x_train2, y_train2, 5)
+fit2 = np.polyfit(x_train, y_train, 5)
 print("y =", round(fit2[0],3),"x^5 +", round(fit2[1],3),"x^4 +", round(fit2[2],3),"x^3 +", round(fit2[3],3),"x^2 +", round(fit2[4],3),"x +", round(fit2[5],3))
 def poly5Reg(x):
     return fit2[0] * pow(x,5) +fit2[1] * pow(x,4) +fit2[2] * pow(x,3) + fit2[3] * pow(x,2) + fit2[4] * x + fit2[5]
