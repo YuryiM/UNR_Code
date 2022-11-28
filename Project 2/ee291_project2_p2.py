@@ -3,16 +3,18 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-figure, axis = plt.subplots(4)
+figure, axis = plt.subplots(5)
 
 # Import data for day 1
 Data = pd.read_excel('Project 2/Solar_data.xlsx', sheet_name='Day_1') 
 x = Data['Irradiance'] 
 y = Data['Kw'] 
 time = Data['Time'] 
+
+# Plot Day 1 Data
 axis[3].scatter(x,y, None, 'k')
-axis[3].set_ylabel("Irradiance")
-axis[3].set_xlabel("Kw")
+axis[3].set_ylabel("Kw")
+axis[3].set_xlabel("Irradiance")
 axis[3].set_title("Day 1 Model")
 axis[3].legend(loc="upper left")
 
@@ -47,6 +49,7 @@ axis[3].plot(xr,yr,'b', label="poly 5")
 
 # Plot scatter plot for day 2 data
 Data = pd.read_excel('Project 2/Solar_data.xlsx', sheet_name='Day_2') 
+t = Data['Time'] 
 x = Data['Irradiance'] 
 y = Data['Kw'] 
 time = Data['Time']
@@ -55,6 +58,17 @@ axis[0].set_ylabel("Irradiance")
 axis[0].set_xlabel("Kw")
 axis[0].set_title("Day 2 Model")
 axis[0].legend(loc="upper left")
+
+y3 = fit1[0] * pow(x,3) + fit1[1] * pow(x,2) + fit1[2] * x + fit1[3]
+y5 = fit2[0] * pow(x,5) +fit2[1] * pow(x,4) +fit2[2] * pow(x,3) + fit2[3] * pow(x,2) + fit2[4] * x + fit2[5]
+
+axis[4].plot(t,y3,'r')
+axis[4].plot(t,y5,'b')
+
+axis[4].scatter(t,y, None, 'k')
+axis[4].set_ylabel("Kw")
+axis[4].set_xlabel("T")
+axis[4].set_title("Day 2 Model")
 
 # Calculate error for poly3 and poly5
 err3 = []
@@ -66,6 +80,8 @@ axis[1].hist(err3,len(err3))
 axis[2].hist(err5,len(err5))
 axis[1].set_title("3 Deg Poly Error")
 axis[2].set_title("5 Deg Poly Error")
+
+# Calculate square error for poly3 and poly5
 
 # Show plots
 plt.show()

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # Add axes labels
 
 # Creates 2 plots
-figure, axis = plt.subplots(2)
+figure, axis = plt.subplots(3)
 
 # Import data for day 1
 Data = pd.read_excel('Project 2/Solar_data.xlsx', sheet_name='Day_1') 
@@ -32,14 +32,23 @@ yr = Reg.intercept_[0] + Reg.coef_[0][0]*xr
 axis[0].plot(xr,yr,'r')
 
 # Plot scatter plot for day 2 data
-Data = pd.read_excel('Project 2/Solar_data.xlsx', sheet_name='Day_2') 
+Data = pd.read_excel('Project 2/Solar_data.xlsx', sheet_name='Day_2')
+t = Data['Time'] 
 x = Data['Irradiance'] 
 y = Data['Kw'] 
 time = Data['Time']
 axis[0].scatter(x,y, None, 'k')
-axis[0].set_ylabel("Irradiance")
-axis[0].set_xlabel("Kw")
+axis[0].set_ylabel("Kw")
+axis[0].set_xlabel("Irradiance")
 axis[0].set_title("Day 2 Model")
+
+y2 = Reg.intercept_[0] + Reg.coef_[0][0]*x
+axis[2].plot(t,y2,'r')
+
+axis[2].scatter(t,y, None, 'k')
+axis[2].set_ylabel("Kw")
+axis[2].set_xlabel("T")
+axis[2].set_title("Day 2 Model")
 
 # Calculate error
 err = []
