@@ -3,11 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# TODO:
-# Add axes labels
-
 # Creates 2 plots
-figure, axis = plt.subplots(3)
+figure, axis = plt.subplots(2)
 
 # Import data for day 1
 Data = pd.read_excel('Project 2/Solar_data.xlsx', sheet_name='Day_1') 
@@ -16,39 +13,28 @@ y = Data['Kw']
 time = Data['Time'] 
 
 # Create linear regression
-x_train = np.array(x).reshape(-1, 1)
-y_train = np.array(y).reshape(-1, 1)
-Reg = LinearRegression()
-Reg.fit(x_train,y_train)
+x_train = np.array(x)
+y_train = np.array(y)
+fit = np.polyfit(x_train, y_train, 1)
 def linReg(x):
-    return Reg.intercept_[0] + Reg.coef_[0][0]*x
+    return fit[0]*x + fit[1]
 
 # Print Linear Regression Parameters
-print("y =",round(Reg.intercept_[0],3)," + ",round(Reg.coef_[0][0],3),"x")
-
-# Plot linear regression
-xr = np.linspace(0,1,100)
-yr = Reg.intercept_[0] + Reg.coef_[0][0]*xr
-axis[0].plot(xr,yr,'r')
+print("y =",round(fit[0],3),"x + ",round(fit[1],3))
 
 # Plot scatter plot for day 2 data
 Data = pd.read_excel('Project 2/Solar_data.xlsx', sheet_name='Day_2')
 t = Data['Time'] 
 x = Data['Irradiance'] 
 y = Data['Kw'] 
-time = Data['Time']
-axis[0].scatter(x,y, None, 'k')
+
+y2 = fit[0]*x + fit[1]
+axis[0].plot(t,y2,'b')
+
+axis[0].scatter(t,y, None, 'k')
 axis[0].set_ylabel("Kw")
-axis[0].set_xlabel("Irradiance")
+axis[0].set_xlabel("T")
 axis[0].set_title("Day 2 Model")
-
-y2 = Reg.intercept_[0] + Reg.coef_[0][0]*x
-axis[2].plot(t,y2,'r')
-
-axis[2].scatter(t,y, None, 'k')
-axis[2].set_ylabel("Kw")
-axis[2].set_xlabel("T")
-axis[2].set_title("Day 2 Model")
 
 # Calculate error
 err = []
