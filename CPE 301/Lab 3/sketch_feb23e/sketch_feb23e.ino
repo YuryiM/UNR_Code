@@ -13,7 +13,6 @@ volatile unsigned char* port_e = (unsigned char*) 0x2E;
 volatile unsigned char* ddr_e = (unsigned char*) 0x2D; 
 volatile unsigned char* pin_e  = (unsigned char*) 0x2C;
 
-
 void setup() 
 {
   // Initialize the Serial Port
@@ -37,13 +36,11 @@ void setup()
 
 void loop() 
 {
-
   // if the pin is high
   if(*pin_k & 0x04)
   {
     *port_d |= 0x01;
     *port_e &= 0x8;
-    // WRITE_HIGH_PD(0);
     Serial.println("PIN IS HIGH");
   }
   // if the pin is low
