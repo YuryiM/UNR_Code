@@ -29,9 +29,9 @@ void setup()
   *port_d |=  0xFE;
 
   //set PE3 to OUTPUT
-  *ddr_e |= 0xF7;
+  *ddr_e |= 0x08;
   // enable pullup resistor on PE3
-  *port_e |=  0x8;
+  *port_e |=  0xF7;
 }
 
 void loop() 
@@ -40,14 +40,14 @@ void loop()
   if(*pin_k & 0x04)
   {
     *port_d |= 0x01;
-    *port_e &= 0x8;
+    *port_e &= 0xF7;
     Serial.println("PIN IS HIGH");
   }
   // if the pin is low
   else
   {
     *port_d &= 0xFE;
-    *port_e |= 0xF7;
+    *port_e |= 0x08;
     Serial.println("PIN IS LOW");
   }
   delay(12);
