@@ -21,9 +21,9 @@ void loop()
   // drive PB7 HIGH
   WRITE_HIGH_PB(7);
   // wait 500ms
-  delay(500);
+  delay(15);
   // drive PB7 LOW
   WRITE_LOW_PB(7);
   // wait 500ms
-  delay(500);
+  delay(15);
 }

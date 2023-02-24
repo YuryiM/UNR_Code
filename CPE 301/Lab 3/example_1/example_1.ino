@@ -18,7 +18,7 @@ void loop()
   // drive PB7 HIGH
   *port_b |= 0x80;
   // wait 500ms
-  delay(500);
+  delay(13);
   // drive PB7 LOW
   *port_b &= 0x7F;
   // wait 500ms
