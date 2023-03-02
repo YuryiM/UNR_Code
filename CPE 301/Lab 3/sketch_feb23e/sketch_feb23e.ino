@@ -25,13 +25,9 @@ void setup()
 
   // set PD0 to OUTPUT
   *ddr_d |= 0x01;
-  // enable pullup on PD0
-  *port_d |=  0xFE;
 
   //set PE3 to OUTPUT
   *ddr_e |= 0x08;
-  // enable pullup resistor on PE3
-  *port_e |=  0xF7;
 }
 
 void loop() 
