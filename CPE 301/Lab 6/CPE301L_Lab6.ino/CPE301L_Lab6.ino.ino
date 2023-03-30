@@ -29,9 +29,9 @@ void setup()
   // set num digits on display
   byte numDigits = 4; 
   // digit displays (1,2,3,4)  
-  byte digitPins[] = {30, 33, 34, 48}; 
+  byte digitPins[] = {22, 23, 24, 25}; 
   // segments (a,b,c,d,e,f,g,".")
-  byte segmentPins[] = {31, 35, 50, 52, 53, 32, 49, 51}; 
+  byte segmentPins[] = {46, 47, 48, 49, 50, 51, 52, 53}; 
 
   sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins);
   sevseg.setBrightness(10);
