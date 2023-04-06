@@ -9,7 +9,7 @@
 #define TBE 0x20  
 #define MAX 100
 
-// Define PORT H Pointers
+// Define PORT B Pointers
 volatile unsigned char* port_b = (unsigned char*) 0x25; 
 volatile unsigned char* ddr_b  = (unsigned char*) 0x24; 
 volatile unsigned char* pin_b  = (unsigned char*) 0x23; 
@@ -40,12 +40,8 @@ void loop()
     printDigit(pResist);
     U0putchar('\n');
 
-    if(pResist < 100){
-      write_pb(7,1);
-    }
-    else {
-      write_pb(7,0);
-    }
+    if(pResist < 100){ write_pb(7,1); }
+    else { write_pb(7,0); }
 }
 
 void set_PB_as_output(unsigned char pin_num)
