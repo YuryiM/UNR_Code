@@ -8,6 +8,8 @@ const int stepsPerRev = 2048;
 // Pin order in function parameters is: IN1 / IN2 / IN3 / IN4
 Stepper myStepper = Stepper(stepsPerRev, 29, 27, 25, 23);
 
+int ventPosition = 0;
+
 volatile unsigned char *myUCSR0A = (unsigned char *)0x00C0;
 volatile unsigned char *myUCSR0B = (unsigned char *)0x00C1;
 volatile unsigned char *myUCSR0C = (unsigned char *)0x00C2;
@@ -34,15 +36,16 @@ void setup() {
 void loop() {
   int stepPotent = adc_read(0);
   Serial.println(stepPotent);
-
-  if(stepPotent > 325){
-    myStepper.step(20);
+  if(stepPotent > 420 && ventPosition < 100){
+    myStepper.step(205);
+    ventPosition += 10;
   }
-  else if(stepPotent < 325){
-    myStepper.step(-20);
+  else if(stepPotent < 210 && ventPosition > 0){
+    myStepper.step(-205);
+    ventPosition -= 10;
   }
   
-  delay(10);
+  delay(5);
   
 //  // Step one revolution in one direction:
 //  Serial.println("clockwise");
