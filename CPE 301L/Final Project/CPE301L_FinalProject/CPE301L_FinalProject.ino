@@ -12,15 +12,16 @@ volatile unsigned char* my_ADCSRA = (unsigned char*) 0x7A;
 volatile unsigned int* my_ADC_DATA = (unsigned int*) 0x78;
 
 // Define LCD pins
-LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup(){
 
+  // Define LCD COLS, ROWS
+  lcd.begin(16, 2);
+  lcdPrint(100.0, 100.0);
 }
 
 void loop(){
-  // Define LCD COLS, ROWS
-  lcd.begin(16, 2);
 }
 
 void lcdPrint(float temperature, float humidity){
@@ -30,7 +31,7 @@ void lcdPrint(float temperature, float humidity){
   lcd.print("%");
   
   lcd.setCursor(0, 1);
-  lcd.print("Fahrenheit: ");
+  lcd.print("Temp(F): ");
   lcd.print(temperature, 1);
 }
 
