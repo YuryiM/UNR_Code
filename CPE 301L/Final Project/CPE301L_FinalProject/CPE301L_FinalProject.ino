@@ -1,9 +1,27 @@
+#include <LiquidCrystal.h>
+
+
+// Define LCD pins
+LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
+
 void setup(){
 
 }
 
 void loop(){
+  // Define LCD COLS, ROWS
+  lcd.begin(16, 2);
+}
+
+void lcdPrint(float temperature, float humidity){
+  lcd.setCursor(0, 0);
+  lcd.print("Humidity: ");
+  lcd.print(humidity, 1);
+  lcd.print("%");
   
+  lcd.setCursor(0, 1);
+  lcd.print("Fahrenheit: ");
+  lcd.print(temperature, 1);
 }
 
 void adc_init()
