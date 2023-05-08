@@ -41,6 +41,28 @@ void setup(){
 }
 
 void loop(){
+  // get state of system
+    if(currentState = 0){
+      // turn on blue led
+      // turn motor on
+      //
+    }
+    else if (currentState = 1){
+      
+    }
+    else if (currentState = 2){
+      
+    }
+    else if (currentState = 3){
+      
+    }
+    if (currentState != 4){
+      
+    }
+  // update state if needed
+
+
+
 }
 
 void lcdPrint(float temperature, float humidity){
