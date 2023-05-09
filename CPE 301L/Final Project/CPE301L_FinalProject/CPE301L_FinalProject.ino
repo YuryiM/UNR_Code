@@ -13,14 +13,6 @@ volatile unsigned char *myUCSR0C = (unsigned char *)0x00C2;
 volatile unsigned int  *myUBRR0  = (unsigned int *) 0x00C4;
 volatile unsigned char *myUDR0   = (unsigned char *)0x00C6;
 
-// Timer setup
-volatile unsigned char *myTCCR1A = (unsigned char *) 0x80;
-volatile unsigned char *myTCCR1B = (unsigned char *) 0x81;
-volatile unsigned char *myTCCR1C = (unsigned char *) 0x82;
-volatile unsigned char *myTIMSK1 = (unsigned char *) 0x6F;
-volatile unsigned int  *myTCNT1  = (unsigned  int *) 0x84;
-volatile unsigned char *myTIFR1 =  (unsigned char *) 0x36;
-
 // ADC Registers
 volatile unsigned char* my_ADMUX = (unsigned char*) 0x7C;
 volatile unsigned char* my_ADCSRB = (unsigned char*) 0x7B;
@@ -42,6 +34,11 @@ volatile unsigned char *PORT_D = (unsigned char *) 0x2B;
 volatile unsigned char *DDR_D = (unsigned char *) 0x2A;
 volatile unsigned char *PIN_D = (unsigned char *) 0x29;
 
+// Define PORT E Registers
+volatile unsigned char *PORT_E = (unsigned char *) 0x2E;
+volatile unsigned char *DDR_E = (unsigned char *) 0x2D;
+volatile unsigned char *PIN_E = (unsigned char *) 0x2C;
+
 // Define PORT H Registers
 volatile unsigned char *PORT_H = (unsigned char *) 0x102;
 volatile unsigned char *DDR_H = (unsigned char *)  0x101;
@@ -52,27 +49,22 @@ volatile unsigned char *PORT_L = (unsigned char *) 0x10B;
 volatile unsigned char *DDR_L = (unsigned char *)  0x10A;
 volatile unsigned char *PIN_L = (unsigned char *)  0x109;
 
-
-// Define pins
-#define FAN_PIN 30
-#define BLUE_LED_PIN 13
-#define RED_LED_PIN 12
-#define YELLOW_LED_PIN 11
-#define GREEN_LED_PIN 10
-#define STOP_BTN_PIN 7
-
 // Define LCD pins
-LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
+LiquidCrystal lcd(9, 8, 5, 4, 3, 7);
 
-// Set up DHT11
+// Set up DHT11 Temp/Humidity Sensor
 #define DHTPIN 34
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-int water_level_threshold = 100;
+// Water level sensor variables
 int water_level;
+int water_level_threshold = 100;
 
-// Define # of steps / revolution
+// Start button state
+volatile bool start_pressed = false;
+
+// Define # of steps / revolution for stepper motor
 const int stepsPerRev = 2048;
 
 // Creates stepper class instance
@@ -88,14 +80,15 @@ char timeStr[10];
 int secs_LCD_update;
 
 // Declare temperature and humidity variables
-// Temperature measured in Celsius
-float temp_threshold = 29.0;
+// Temperature measured in degrees Celsius
 float temp;
+float temp_threshold = 35.0;
 float humidity;
 
 // Define system states
 enum states{RUNNING_STATE, IDLE_STATE, DISABLED_STATE, ERROR_STATE};
 enum states currentState;
+// Enum -> String
 const char * const states_str[] =
 {
     [RUNNING_STATE] = "RUNNING",
@@ -110,7 +103,7 @@ void setup(){
   humidity = dht.readHumidity();
   temp = dht.readTemperature();
   
-  // Define RTC module constants and other things
+  // Define RTC module constants
   #ifdef ARDUINO_ARCH_ESP8266
     URTCLIB_WIRE.begin(0, 2); // D3 and D4 on ESP8266
   #else
@@ -118,11 +111,17 @@ void setup(){
   #endif
   //  RTCLib::set(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year)
   rtc.set(0, 51, 6, 1, 8, 5, 23);
+
+  // Set initial seconds time
   secs_LCD_update = rtc.second();
 
   // Define LCD COLS, ROWS
   lcd.begin(16, 2);
   lcdPrintTemp();
+
+  // Set up interrupt for D2 (PE4) start button
+  EICRA |= (1 << ISC01);
+  EIMSK |= (1 << INT4);
 
   // Set initial system state to idle
   currentState = IDLE_STATE;
@@ -130,23 +129,25 @@ void setup(){
   // Set the speed to 5 rpm:
   myStepper.setSpeed(5);
   
-  // Initialize ADC (required to work)
+  // Initialize ADC
   adc_init();
 
+  // Get initial water level
   water_level = adc_read(15);
 
   // Initialize UART and set baud rate to 9600
   U0init(9600);
 
-  // Set D30 (PC7) as output, for fan
+  // Set D30 (PC7) as output, for transistor control
   *DDR_C |= (1 << 7);
 
-  // Set D32 (PC5) as output, for water level monitor power
+  // Set D32 (PC5) as output, for water level monitor
   *DDR_C |= (1 << 5);
   
-    // Set D46 (PL3) as input, for START button
-  *DDR_L &= ~(1 << 3);
-  *PORT_L |= 0x80;
+  // Set D2 (PE4) as input, for START button
+  *DDR_E &= ~(1 << 4);
+  // Enable internal pullup  
+  *PORT_E |= 0x10;
     // Set D44 (PL5) as input, for STOP button
   *DDR_L &= ~(1 << 5);
   *PORT_L |= 0x20;
@@ -154,55 +155,28 @@ void setup(){
   *DDR_L &= ~(1 << 7);
   *PORT_L |= 0x8;
 
-
-  
-  // To check if PL3 button is pressed, use:
-  // if(*PIN_H & 0x8){} --> 0x8 = 0b0001000 3rd bit
-
   // Set LED pins, digital pins D10-D13 (PB4, PB5, PB6, PB7) to output
-  *DDR_B |= (1 << 4);
-  *DDR_B |= (1 << 5);
-  *DDR_B |= (1 << 6);
-  *DDR_B |= (1 << 7);
-  // To turn LEDS on:
-  // *PORT_B |= (1 << 4);
-  // To turn LEDS off:
-  // *PORT_B &= !(1 << 4);
-
-
+  *DDR_B |= (1 << 4); // PB4 -- GREEN
+  *DDR_B |= (1 << 5); // PB5 -- YELLOW
+  *DDR_B |= (1 << 6); // PB6 -- RED
+  *DDR_B |= (1 << 7); // PB7 -- BLUE
 }
 
 void loop(){
-//  if(*PIN_L & 0x80){
-//    *PORT_B |= (1 << 4); //reset
-//    Serial.println("RESET PRESSED");
-//  }
-//  else if(*PIN_L & 0x20){ // stop
-//    *PORT_B |= (1 << 5);
-//    Serial.println("STOP PRESSED");
-//  }
-//  else if(*PIN_L & 0x8){ //start button
-//    *PORT_B |= (1 << 6);
-//    Serial.println("START PRESSED");
-//  }
-//  else{
-//    ledOFF();
-//  }
-
   // Refresh the DS1307 RTC
   rtc.refresh();
-  // Set new DateTime to global char[]
+  // Set new time to global char[]
   // To print time to serial use: uartPrintStr(timeStr);
   sprintf(timeStr, "%02d:%02d:%02d", rtc.hour(), rtc.minute(), rtc.second());
   
   if (currentState != DISABLED_STATE){
     // Read temperature and humidity
-    humidity = dht.readHumidity();
-    temp = dht.readTemperature();
+    updateDHT();
     
-    // Vent controls
+    // Read vent control potentiometer
     int ventPotent = adc_read(0);
-    
+
+    // Rotate stepper motor based on potentiometer position
     if(ventPotent > 420 && ventPosition < 100){
       myStepper.step(205);
       ventPosition += 10;
@@ -224,7 +198,6 @@ void loop(){
       setFan(0);
 
       updateWaterLevel();
-
       // If STOP button pressed, change to disabled state
       if(*PIN_L & 0x20){
         changeState(DISABLED_STATE);
@@ -252,8 +225,11 @@ void loop(){
       if(*PIN_L & 0x20){
         changeState(DISABLED_STATE);
       }
-      else if(*PIN_L & 0x80){
+      else if(*PIN_L & 0x80){ // if reset pressed
         changeState(IDLE_STATE);
+        updateDHT();
+        lcd.clear();
+        lcdPrintTemp();
       }
     }
     else if (currentState == RUNNING_STATE){
@@ -270,13 +246,16 @@ void loop(){
       else if(water_level < water_level_threshold){
         changeState(ERROR_STATE);
       }
-//      else if(temp < temp_threshold){
-//        changeState(IDLE_STATE);
-//      }
+      else if(temp < temp_threshold){
+        changeState(IDLE_STATE);
+      }
     }
     
   }
   else if(currentState == DISABLED_STATE){
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("DISABLED");
     ledOFF();
     // Set D11 (PB5) yellow LED ON
     *PORT_B |= (1 << 5);
@@ -286,22 +265,37 @@ void loop(){
     *PORT_C &= !(1 << 5);
 
     // if start button is pressed, set state to idle
-    if(*PIN_L & 0x8){
+    // start button monitored using ISR() (see below)  
+    if(start_pressed){
       changeState(IDLE_STATE);
+      updateDHT();
+      lcd.clear();
+      lcdPrintTemp();
+      start_pressed = false;
     }
   }  
 }
 
+// Update humidity and temperature from DHT
+void updateDHT(){
+  humidity = dht.readHumidity();
+  temp = dht.readTemperature();
+}
+
+// Update water level
 void updateWaterLevel(){
   // Set PC5, water level monitor power HIGH
   *PORT_C |= (1 << 5);
+  // Read from A15 (PK7)
   water_level = adc_read(15);
 }
 
+// Turn all LEDs off
 void ledOFF(){
   *PORT_B &= 0b00000000;
 }
 
+// Change system state and print using UART
 void changeState(enum states newState){
   uartPrintStr(timeStr);
   uartPrintStr(" -- State changed from ");
@@ -313,13 +307,15 @@ void changeState(enum states newState){
   currentState = newState;
 }
 
-// Accepts char[], prints using UART
+
+// Prints string to UART
 void uartPrintStr(char toPrint[]){ 
   for (int i = 0; i < strlen(toPrint); i++) {
     U0putchar(toPrint[i]);      // Print each character in the array
   }
 }
 
+// Prints vent position using UART
 void uartPrintVentPos(){
   uartPrintStr(timeStr);
   uartPrintStr(" -- Vent position changed to ");
@@ -328,6 +324,7 @@ void uartPrintVentPos(){
   U0putchar('\n');
 }
 
+// Prints number using UART
 void printDigit(int N){
     char arr[100];
     int i = 0;
@@ -345,12 +342,16 @@ void printDigit(int N){
 }
 
 // Set fan state
+// 1 -- ON
+// 0 -- OFF
 void setFan(bool state){
   if(state == 1){ *PORT_C |= (1 << 7); }
   else{ *PORT_C &= ~(1 << 7); }
 }
 
 // Set water level monitor state
+// 1 -- ON
+// 0 -- OFF
 void setWaterSensor(bool state){
   if(state == 1){ *PORT_C |= (1 << 5); }
   else{ *PORT_C &= ~(1 << 5); }
@@ -369,46 +370,34 @@ void lcdPrintTemp(){
   lcd.print(temp, 2);
 }
 
+// ISR() for monitoring PE4 start button
+ISR(INT4_vect) {
+  start_pressed = true; 
+}
+
 // UART Functions
-//
-// function to initialize USART0 to "int" Baud, 8 data bits,
-// no parity, and one stop bit. Assume FCPU = 16MHz.
-//
 void U0init(unsigned long U0baud)
 {
-//  Students are responsible for understanding
-//  this initialization code for the ATmega2560 USART0
-//  and will be expected to be able to intialize
-//  the USART in differrent modes.
-//
- unsigned long FCPU = 16000000;
- unsigned int tbaud;
- tbaud = (FCPU / 16 / U0baud - 1);
- // Same as (FCPU / (16 * U0baud)) - 1;
- *myUCSR0A = 0x20;
- *myUCSR0B = 0x18;
- *myUCSR0C = 0x06;
- *myUBRR0  = tbaud;
+  unsigned long FCPU = 16000000;
+  unsigned int tbaud;
+  tbaud = (FCPU / 16 / U0baud - 1);
+  *myUCSR0A = 0x20;
+  *myUCSR0B = 0x18;
+  *myUCSR0C = 0x06;
+  *myUBRR0  = tbaud;
 }
-//
-// Read USART0 RDA status bit and return non-zero true if set
-//
+
 unsigned char U0kbhit()
 {
 
   return *myUCSR0A & RDA;
 }
-//
-// Read input character from USART0 input buffer
-//
+
 unsigned char U0getchar()
 {
   return *myUDR0;
 }
-//
-// Wait for USART0 TBE to be set then write character to
-// transmit buffer
-//
+
 void U0putchar(unsigned char U0pdata)
 {
   while((*myUCSR0A & TBE) == 0){}
@@ -417,43 +406,33 @@ void U0putchar(unsigned char U0pdata)
 }
 
 // Analog -> Digital Converter Functions
-
 void adc_init()
 {
-  // setup the A register
-  *my_ADCSRA |= 0b10000000; // set bit   7 to 1 to enable the ADC
-  *my_ADCSRA &= 0b11011111; // clear bit 6 to 0 to disable the ADC trigger mode
-  *my_ADCSRA &= 0b11110111; // clear bit 5 to 0 to disable the ADC interrupt
-  *my_ADCSRA &= 0b11111000; // clear bit 0-2 to 0 to set prescaler selection to slow reading
-  // setup the B register
-  *my_ADCSRB &= 0b11110111; // clear bit 3 to 0 to reset the channel and gain bits
-  *my_ADCSRB &= 0b11111000; // clear bit 2-0 to 0 to set free running mode
-  // setup the MUX Register
-  *my_ADMUX  &= 0b01111111; // clear bit 7 to 0 for AVCC analog reference
-  *my_ADMUX  |= 0b01000000; // set bit   6 to 1 for AVCC analog reference
-  *my_ADMUX  &= 0b11011111; // clear bit 5 to 0 for right adjust result
-  *my_ADMUX  &= 0b11100000; // clear bit 4-0 to 0 to reset the channel and gain bits
+  // set up the A register
+  *my_ADCSRA |= 0b10000000; 
+  *my_ADCSRA &= 0b11011111; 
+  *my_ADCSRA &= 0b11110111; 
+  *my_ADCSRA &= 0b11111000; 
+  // set up the B register
+  *my_ADCSRB &= 0b11110111; 
+  *my_ADCSRB &= 0b11111000; 
+  // set up the MUX Register
+  *my_ADMUX  &= 0b01111111;
+  *my_ADMUX  |= 0b01000000;
+  *my_ADMUX  &= 0b11011111;
+  *my_ADMUX  &= 0b11100000;
 }
 unsigned int adc_read(unsigned char adc_channel_num)
 {
-  // clear the channel selection bits (MUX 4:0)
   *my_ADMUX  &= 0b11100000;
-  // clear the channel selection bits (MUX 5)
   *my_ADCSRB &= 0b11110111;
-  // set the channel number
   if(adc_channel_num > 7)
   {
-    // set the channel selection bits, but remove the most significant bit (bit 3)
     adc_channel_num -= 8;
-    // set MUX bit 5
     *my_ADCSRB |= 0b00001000;
   }
-  // set the channel selection bits
   *my_ADMUX  += adc_channel_num;
-  // set bit 6 of ADCSRA to 1 to start a conversion
   *my_ADCSRA |= 0x40;
-  // wait for the conversion to complete
   while((*my_ADCSRA & 0x40) != 0);
-  // return the result in the ADC data register
   return *my_ADC_DATA;
 }
