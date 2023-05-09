@@ -85,8 +85,11 @@ void setup(){
   // Initialize UART and set baud rate to 9600
   U0init(9600);
 
-  // Set digital pin 30 (PA7) as output for fan
+  // Set D30 (PC7) as output, for fan
   *DDR_C |= (1 << 7);
+
+  // Set D32 (PC5) as output, for water level monitor power
+  *DDR_C |= (1 << 5);
 
   // Set digital pin 7 (PH4) as input, for STOP button
   *DDR_H &= ~(1 << 4);
@@ -94,6 +97,8 @@ void setup(){
   *PORT_H |= 0x10;
   // To check if PH4 button is pressed, use:
   // if(*PIN_H & 0x10){}
+
+  
 
   // Set LED pins, digital pins D10-D13 (PB4, PB5, PB6, PB7) to output
   *DDR_B |= (1 << 4);
@@ -108,12 +113,12 @@ void setup(){
 
 void loop(){
     if(*PIN_H & 0x10){
-      *PORT_B |= (1 << 4);
+      setWaterSensor(1);
     }
     else{
-      *PORT_B &= !(1 << 4);
+      setWaterSensor(0);
     }
-    // Refresh the RTC
+    // Refresh the DS1307 RTC
     rtc.refresh();
     // Set new DateTime to global char[]
     // Print time to serial using uartPrintStr(dateTimeStr);
@@ -162,6 +167,16 @@ void setFan(bool state){
   }
   else{
     *PORT_C &= ~(1 << 7);
+  }
+}
+
+// Set water level monitor state
+void setWaterSensor(bool state){
+  if(state == 1){
+    *PORT_C |= (1 << 5);
+  }
+  else{
+    *PORT_C &= ~(1 << 5);
   }
 }
 
@@ -224,7 +239,7 @@ void U0putchar(unsigned char U0pdata)
   
 }
 
-// Analog - Digital Converter Functions
+// Analog -> Digital Converter Functions
 
 void adc_init()
 {
