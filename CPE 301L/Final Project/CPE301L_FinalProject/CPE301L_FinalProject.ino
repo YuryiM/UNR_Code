@@ -17,6 +17,22 @@ volatile unsigned char* my_ADCSRB = (unsigned char*) 0x7B;
 volatile unsigned char* my_ADCSRA = (unsigned char*) 0x7A;
 volatile unsigned int* my_ADC_DATA = (unsigned int*) 0x78;
 
+// PORT A Registers (for fan)
+volatile unsigned char *PORT_A = (unsigned char *) 0x28;
+volatile unsigned char *DDR_A = (unsigned char *) 0x27;
+
+
+// Define pins
+#define FAN_PIN 30
+#define BLUE_LED_PIN 13
+#define RED_LED_PIN 12
+#define YELLOW_LED_PIN 11
+#define GREEN_LED_PIN 10
+#define STOP_BTN_PIN 7
+
+
+
+
 // Define LCD pins
 LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 
@@ -24,6 +40,7 @@ LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 uRTCLib rtc(0x68);
 // Date time char array
 char dateTimeStr[18];
+
 
 // Define system states
 enum states{RUNNING_STATE, IDLE_STATE, DISABLED_STATE, ERROR_STATE};
@@ -51,6 +68,9 @@ void setup(){
 
   // Initialize UART and set baud rate to 9600
   U0init(9600);
+
+  // Set digital pin 30 (PA7) as output
+  *DDR_A |= (1 << 7);
 }
 
 void loop(){
@@ -94,6 +114,16 @@ void uartPrintStr(char toPrint[]){
     U0putchar(toPrint[i]);      // Print each character in the array
   }
   U0putchar('\n');
+}
+
+// Set fan state
+void setFan(bool state){
+  if(state == 1){
+    *PORT_A |= (1 << 7);
+  }
+  else{
+    *PORT_A &= ~(1 << 7);
+  }
 }
 
 // Print temperature and humidity to display
