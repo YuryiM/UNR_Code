@@ -12,6 +12,14 @@ volatile unsigned char *myUCSR0C = (unsigned char *)0x00C2;
 volatile unsigned int  *myUBRR0  = (unsigned int *) 0x00C4;
 volatile unsigned char *myUDR0   = (unsigned char *)0x00C6;
 
+// Timer setup
+volatile unsigned char *myTCCR1A = (unsigned char *) 0x80;
+volatile unsigned char *myTCCR1B = (unsigned char *) 0x81;
+volatile unsigned char *myTCCR1C = (unsigned char *) 0x82;
+volatile unsigned char *myTIMSK1 = (unsigned char *) 0x6F;
+volatile unsigned int  *myTCNT1  = (unsigned  int *) 0x84;
+volatile unsigned char *myTIFR1 =  (unsigned char *) 0x36;
+
 // ADC Registers
 volatile unsigned char* my_ADMUX = (unsigned char*) 0x7C;
 volatile unsigned char* my_ADCSRB = (unsigned char*) 0x7B;
@@ -38,6 +46,11 @@ volatile unsigned char *PORT_H = (unsigned char *) 0x102;
 volatile unsigned char *DDR_H = (unsigned char *)  0x101;
 volatile unsigned char *PIN_H = (unsigned char *)  0x100;
 
+// Define PORT L Registers
+volatile unsigned char *PORT_L = (unsigned char *) 0x10B;
+volatile unsigned char *DDR_L = (unsigned char *)  0x10A;
+volatile unsigned char *PIN_L = (unsigned char *)  0x109;
+
 
 // Define pins
 #define FAN_PIN 30
@@ -54,6 +67,8 @@ LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 #define DHTPIN 34
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
+
+int water_level_threshold = 100;
 
 // Setup real time clock module
 uRTCLib rtc(0x68);
@@ -97,8 +112,8 @@ void setup(){
   lcd.begin(16, 2);
   lcdPrintTemp();
 
-  // Set system state to disabled
-  currentState = DISABLED_STATE;
+  // Set initial system state to idle
+  currentState = IDLE_STATE;
   
   // Initialize ADC (required to work)
   adc_init();
@@ -111,13 +126,18 @@ void setup(){
 
   // Set D32 (PC5) as output, for water level monitor power
   *DDR_C |= (1 << 5);
+  
+    // Set D46 (PL3) as input, for START button
+  *DDR_L &= ~(1 << 3);
+    // Set D44 (PL5) as input, for STOP button
+  *DDR_L &= ~(1 << 5);
+  // Set D42 (PL7) as input, for RESET button
+  *DDR_L &= ~(1 << 7);
 
-  // Set digital pin 7 (PH4) as input, for STOP button
-  *DDR_H &= ~(1 << 4);
-  // Enable internal pullup on PH4
-  *PORT_H |= 0x10;
-  // To check if PH4 button is pressed, use:
-  // if(*PIN_H & 0x10){}
+
+  
+  // To check if PL3 button is pressed, use:
+  // if(*PIN_H & 0x8){} --> 0x8 = 0b0001000 3rd bit
 
   // Set LED pins, digital pins D10-D13 (PB4, PB5, PB6, PB7) to output
   *DDR_B |= (1 << 4);
@@ -128,61 +148,82 @@ void setup(){
   // *PORT_B |= (1 << 4);
   // To turn LEDS off:
   // *PORT_B &= !(1 << 4);
+
+
 }
 
 void loop(){
+//  if(*PIN_L & 0x80){
+//    *PORT_B |= (1 << 4); //reset
+//    Serial.println("RESET PRESSED");
+//  }
+//  else if(*PIN_L & 0x20){ // stop
+//    *PORT_B |= (1 << 5);
+//    Serial.println("STOP PRESSED");
+//  }
+//  else if(*PIN_L & 0x8){ //start button
+//    *PORT_B |= (1 << 6);
+//    Serial.println("START PRESSED");
+//  }
+//  else{
+//    ledOFF();
+//  }
   // Refresh the DS1307 RTC
   rtc.refresh();
   // Set new DateTime to global char[]
   // To print time to serial use: uartPrintStr(timeStr);
   sprintf(timeStr, "%02d:%02d:%02d", rtc.hour(), rtc.minute(), rtc.second());
-  uartPrintStr(states_str[currentState]);
-  delay(1000);
-  if (currentState != DISABLED_STATE){
+  // if stop button pressed, system goes into disabled state 
+  if(*PIN_H & 0x10){ changeState(DISABLED_STATE); }
+  
+  if (currentState != DISABLED_STATE){   
     // Read temperature and humidity
     humidity = dht.readHumidity();
     temp = dht.readTemperature();
     
+    
+    
+    
     // Update LCD once per minute
     if(secs_LCD_update == rtc.second()){ lcdPrintTemp(); }
     
-    // if stop button pressed, fan turns off and system goes into disabled state
-    if((*PIN_H & 0x10) && (currentState != DISABLED_STATE)){
-      setFan(0);
-      uartPrintStr(states_str[currentState]);
-      changeState(DISABLED_STATE);
+    if(currentState == IDLE_STATE){
+      ledOFF();
+      *PORT_B |= (1 << 4);
+      
+    }
+    else if (currentState == ERROR_STATE){
+      ledOFF();
+      *PORT_B |= (1 << 6);
+
+      if(*PIN_L & 0x20){
+        changeState(DISABLED_STATE);
+      }
+    }
+    else if (currentState == RUNNING_STATE){
+      ledOFF();
+      *PORT_B |= (1 << 7);
+
+      
+    }
+    
+  }
+  else{
+    // Set D11 (PB5) yellow LED ON
+    *PORT_B |= (1 << 5);
+    setFan(0);
+
+    // if start button is pressed, set state to idle
+    if(*PIN_L & 0x8){
+      changeState(IDLE_STATE);
     }
   }
 
-  if(*PIN_H & 0x10){
-    setWaterSensor(1);
-  }
-  else{
-    setWaterSensor(0);
-  }
-
-
   
-  // get state of system
-  if(currentState == 0){
-    // turn on blue led
-    // turn motor on
-    //
-    
-  }
-  else if (currentState == 1){
-    
-  }
-  else if (currentState == 2){
-    
-  }
-  else if (currentState == 3){
-    // turn on yellow led
-    // don't perform temperature or
-  }
-  
-  // update state if needed
+}
 
+void ledOFF(){
+  *PORT_B &= 0b00000000;
 }
 
 void changeState(enum states newState){
