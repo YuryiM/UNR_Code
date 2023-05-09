@@ -46,9 +46,6 @@ volatile unsigned char *PIN_H = (unsigned char *)  0x100;
 #define GREEN_LED_PIN 10
 #define STOP_BTN_PIN 7
 
-
-
-
 // Define LCD pins
 LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 
@@ -57,7 +54,8 @@ uRTCLib rtc(0x68);
 // Date time char array
 char dateTimeStr[18];
 
-
+float temperature;
+float humidity;
 // Define system states
 enum states{RUNNING_STATE, IDLE_STATE, DISABLED_STATE, ERROR_STATE};
 enum states currentState;
@@ -140,7 +138,7 @@ void loop(){
     }
     else if (currentState == 3){
       // turn on yellow led
-      // don't perform temperatuer or
+      // don't perform temperature or
     }
     if (currentState != 4){
       //get humidity
@@ -162,26 +160,18 @@ void uartPrintStr(char toPrint[]){
 
 // Set fan state
 void setFan(bool state){
-  if(state == 1){
-    *PORT_C |= (1 << 7);
-  }
-  else{
-    *PORT_C &= ~(1 << 7);
-  }
+  if(state == 1){ *PORT_C |= (1 << 7); }
+  else{ *PORT_C &= ~(1 << 7); }
 }
 
 // Set water level monitor state
 void setWaterSensor(bool state){
-  if(state == 1){
-    *PORT_C |= (1 << 5);
-  }
-  else{
-    *PORT_C &= ~(1 << 5);
-  }
+  if(state == 1){ *PORT_C |= (1 << 5); }
+  else{ *PORT_C &= ~(1 << 5); }
 }
 
 // Print temperature and humidity to display
-void lcdPrint(float temperature, float humidity){
+void lcdPrint(){
   lcd.setCursor(0, 0);
   lcd.print("Humidity: ");
   lcd.print(humidity, 1);
