@@ -17,17 +17,25 @@ volatile unsigned char* my_ADCSRB = (unsigned char*) 0x7B;
 volatile unsigned char* my_ADCSRA = (unsigned char*) 0x7A;
 volatile unsigned int* my_ADC_DATA = (unsigned int*) 0x78;
 
+// Define PORT B Registers
+volatile unsigned char *PORT_B = (unsigned char *) 0x25;
+volatile unsigned char *DDR_B =  (unsigned char *) 0x24;
+volatile unsigned char *PIN_B =  (unsigned char *) 0x23;
+
 // Define PORT C Registers
 volatile unsigned char *PORT_C = (unsigned char *) 0x28;
 volatile unsigned char *DDR_C = (unsigned char *) 0x27;
+volatile unsigned char *PIN_C = (unsigned char *) 0x26;
 
 // Define PORT D Registers
 volatile unsigned char *PORT_D = (unsigned char *) 0x2B;
 volatile unsigned char *DDR_D = (unsigned char *) 0x2A;
+volatile unsigned char *PIN_D = (unsigned char *) 0x29;
 
 // Define PORT H Registers
 volatile unsigned char *PORT_H = (unsigned char *) 0x102;
-volatile unsigned char *DDR_H = (unsigned char *) 0x101;
+volatile unsigned char *DDR_H = (unsigned char *)  0x101;
+volatile unsigned char *PIN_H = (unsigned char *)  0x100;
 
 
 // Define pins
@@ -71,7 +79,7 @@ void setup(){
   // Set system state to disabled
   currentState = DISABLED_STATE;
 
-  // Initialize ADC (required)
+  // Initialize ADC (required to work)
   adc_init();
 
   // Initialize UART and set baud rate to 9600
@@ -82,9 +90,29 @@ void setup(){
 
   // Set digital pin 7 (PH4) as input, for STOP button
   *DDR_H &= ~(1 << 4);
+  // Enable internal pullup on PH4
+  *PORT_H |= 0x10;
+  // To check if PH4 button is pressed, use:
+  // if(*PIN_H & 0x10){}
+
+  // Set LED pins, digital pins D10-D13 (PB4, PB5, PB6, PB7) to output
+  *DDR_B |= (1 << 4);
+  *DDR_B |= (1 << 5);
+  *DDR_B |= (1 << 6);
+  *DDR_B |= (1 << 7);
+  // To turn LEDS on:
+  // *PORT_B |= (1 << 4);
+  // To turn LEDS off:
+  // *PORT_B &= !(1 << 4);
 }
 
 void loop(){
+    if(*PIN_H & 0x10){
+      *PORT_B |= (1 << 4);
+    }
+    else{
+      *PORT_B &= !(1 << 4);
+    }
     // Refresh the RTC
     rtc.refresh();
     // Set new DateTime to global char[]
