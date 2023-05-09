@@ -18,6 +18,8 @@ LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 
 // Setup real time clock module
 uRTCLib rtc(0x68);
+// Date time char array
+char dateTimeStr[18];
 
 // Define system states
 enum states{RUNNING_STATE, IDLE_STATE, DISABLED_STATE, ERROR_STATE};
@@ -34,17 +36,27 @@ void setup(){
   #else
     URTCLIB_WIRE.begin();
   #endif
-  rtc.set(0, 22, 7, 6, 6, 5, 23);
+  //  RTCLib::set(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year)
+  rtc.set(0, 51, 6, 1, 8, 5, 23);
 
   // Set system state to disabled
   currentState = DISABLED_STATE;
 
   // Initialize ADC (required)
   adc_init();
+
+  // Initialize UART and set baud rate to 9600
+  U0init(9600);
 }
 
 void loop(){
-  // get state of system
+    // Refresh the RTC
+    rtc.refresh();
+    // Set new DateTime to global char[]
+    sprintf(dateTimeStr, "%02d-%02d-%02d %02d:%02d:%02d", rtc.month(), rtc.day(), rtc.year(), rtc.hour(), rtc.minute(), rtc.second());
+
+    
+    // get state of system
     if(currentState = 0){
       // turn on blue led
       // turn motor on
@@ -84,6 +96,52 @@ void lcdPrint(float temperature, float humidity){
   lcd.print(temperature, 1);
 }
 
+// UART Functions
+//
+// function to initialize USART0 to "int" Baud, 8 data bits,
+// no parity, and one stop bit. Assume FCPU = 16MHz.
+//
+void U0init(unsigned long U0baud)
+{
+//  Students are responsible for understanding
+//  this initialization code for the ATmega2560 USART0
+//  and will be expected to be able to intialize
+//  the USART in differrent modes.
+//
+ unsigned long FCPU = 16000000;
+ unsigned int tbaud;
+ tbaud = (FCPU / 16 / U0baud - 1);
+ // Same as (FCPU / (16 * U0baud)) - 1;
+ *myUCSR0A = 0x20;
+ *myUCSR0B = 0x18;
+ *myUCSR0C = 0x06;
+ *myUBRR0  = tbaud;
+}
+//
+// Read USART0 RDA status bit and return non-zero true if set
+//
+unsigned char U0kbhit()
+{
+
+  return *myUCSR0A & RDA;
+}
+//
+// Read input character from USART0 input buffer
+//
+unsigned char U0getchar()
+{
+  return *myUDR0;
+}
+//
+// Wait for USART0 TBE to be set then write character to
+// transmit buffer
+//
+void U0putchar(unsigned char U0pdata)
+{
+  while((*myUCSR0A & TBE) == 0){}
+  *myUDR0 = U0pdata;
+  
+}
 
 // Analog - Digital Converter Functions
 
