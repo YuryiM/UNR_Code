@@ -57,8 +57,8 @@ DHT dht(DHTPIN, DHTTYPE);
 
 // Setup real time clock module
 uRTCLib rtc(0x68);
-// Date time char array
-char dateTimeStr[18];
+// Time char array
+char timeStr[10];
 int secs_LCD_update;
 
 // Declare temperature and humidity variables
@@ -69,6 +69,13 @@ float humidity;
 // Define system states
 enum states{RUNNING_STATE, IDLE_STATE, DISABLED_STATE, ERROR_STATE};
 enum states currentState;
+const char * const states_str[] =
+{
+    [RUNNING_STATE] = "RUNNING",
+    [IDLE_STATE] = "IDLE",
+    [DISABLED_STATE]  = "DISABLED",
+    [ERROR_STATE]  = "ERROR",
+};
 
 void setup(){
   // Initialize DHT11 sensor
@@ -92,7 +99,7 @@ void setup(){
 
   // Set system state to disabled
   currentState = DISABLED_STATE;
-
+  
   // Initialize ADC (required to work)
   adc_init();
 
@@ -112,8 +119,6 @@ void setup(){
   // To check if PH4 button is pressed, use:
   // if(*PIN_H & 0x10){}
 
-  
-
   // Set LED pins, digital pins D10-D13 (PB4, PB5, PB6, PB7) to output
   *DDR_B |= (1 << 4);
   *DDR_B |= (1 << 5);
@@ -126,49 +131,69 @@ void setup(){
 }
 
 void loop(){
+  // Refresh the DS1307 RTC
+  rtc.refresh();
+  // Set new DateTime to global char[]
+  // To print time to serial use: uartPrintStr(timeStr);
+  sprintf(timeStr, "%02d:%02d:%02d", rtc.hour(), rtc.minute(), rtc.second());
+  uartPrintStr(states_str[currentState]);
+  delay(1000);
+  if (currentState != DISABLED_STATE){
+    // Read temperature and humidity
     humidity = dht.readHumidity();
     temp = dht.readTemperature();
-    // Refresh LCD with new temperature/humidity info if 60sec have passed
+    
+    // Update LCD once per minute
     if(secs_LCD_update == rtc.second()){ lcdPrintTemp(); }
     
-    if(*PIN_H & 0x10){
-      setWaterSensor(1);
+    // if stop button pressed, fan turns off and system goes into disabled state
+    if((*PIN_H & 0x10) && (currentState != DISABLED_STATE)){
+      setFan(0);
+      uartPrintStr(states_str[currentState]);
+      changeState(DISABLED_STATE);
     }
-    else{
-      setWaterSensor(0);
-    }
-    // Refresh the DS1307 RTC
-    rtc.refresh();
-    // Set new DateTime to global char[]
-    // To print time to serial use: uartPrintStr(dateTimeStr);
-    sprintf(dateTimeStr, "%02d-%02d-%02d %02d:%02d:%02d", rtc.month(), rtc.day(), rtc.year(), rtc.hour(), rtc.minute(), rtc.second());
+  }
 
+  if(*PIN_H & 0x10){
+    setWaterSensor(1);
+  }
+  else{
+    setWaterSensor(0);
+  }
+
+
+  
+  // get state of system
+  if(currentState == 0){
+    // turn on blue led
+    // turn motor on
+    //
     
-    // get state of system
-    if(currentState = 0){
-      // turn on blue led
-      // turn motor on
-      //
-      
-    }
-    else if (currentState == 1){
-      
-    }
-    else if (currentState == 2){
-      
-    }
-    else if (currentState == 3){
-      // turn on yellow led
-      // don't perform temperature or
-    }
-    if (currentState != 4){
-      //get humidity
-      // get temp
-      // update LCD once per minute
-      // if stop button pressed, fan turns off and system goes into disabled state
-    }
+  }
+  else if (currentState == 1){
+    
+  }
+  else if (currentState == 2){
+    
+  }
+  else if (currentState == 3){
+    // turn on yellow led
+    // don't perform temperature or
+  }
+  
   // update state if needed
 
+}
+
+void changeState(enum states newState){
+  uartPrintStr(timeStr);
+  uartPrintStr(" -- State changed from ");
+  uartPrintStr(states_str[currentState]);
+  uartPrintStr(" to ");
+  uartPrintStr(states_str[newState]);
+  U0putchar('\n');
+
+  currentState = newState;
 }
 
 // Accepts char[], prints using UART
@@ -176,7 +201,6 @@ void uartPrintStr(char toPrint[]){
   for (int i = 0; i < strlen(toPrint); i++) {
     U0putchar(toPrint[i]);      // Print each character in the array
   }
-  U0putchar('\n');
 }
 
 // Set fan state
