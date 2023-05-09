@@ -70,6 +70,7 @@ LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 DHT dht(DHTPIN, DHTTYPE);
 
 int water_level_threshold = 100;
+int water_level;
 
 // Define # of steps / revolution
 const int stepsPerRev = 2048;
@@ -88,6 +89,7 @@ int secs_LCD_update;
 
 // Declare temperature and humidity variables
 // Temperature measured in Celsius
+float temp_threshold = 29.0;
 float temp;
 float humidity;
 
@@ -131,6 +133,8 @@ void setup(){
   // Initialize ADC (required to work)
   adc_init();
 
+  water_level = adc_read(15);
+
   // Initialize UART and set baud rate to 9600
   U0init(9600);
 
@@ -142,10 +146,13 @@ void setup(){
   
     // Set D46 (PL3) as input, for START button
   *DDR_L &= ~(1 << 3);
+  *PORT_L |= 0x80;
     // Set D44 (PL5) as input, for STOP button
   *DDR_L &= ~(1 << 5);
+  *PORT_L |= 0x20;
   // Set D42 (PL7) as input, for RESET button
   *DDR_L &= ~(1 << 7);
+  *PORT_L |= 0x8;
 
 
   
@@ -181,15 +188,14 @@ void loop(){
 //  else{
 //    ledOFF();
 //  }
+
   // Refresh the DS1307 RTC
   rtc.refresh();
   // Set new DateTime to global char[]
   // To print time to serial use: uartPrintStr(timeStr);
   sprintf(timeStr, "%02d:%02d:%02d", rtc.hour(), rtc.minute(), rtc.second());
-  // if stop button pressed, system goes into disabled state 
-  if(*PIN_H & 0x10){ changeState(DISABLED_STATE); }
   
-  if (currentState != DISABLED_STATE){   
+  if (currentState != DISABLED_STATE){
     // Read temperature and humidity
     humidity = dht.readHumidity();
     temp = dht.readTemperature();
@@ -198,13 +204,14 @@ void loop(){
     int ventPotent = adc_read(0);
     
     if(ventPotent > 420 && ventPosition < 100){
-      Serial.println("TEST");
       myStepper.step(205);
       ventPosition += 10;
+      uartPrintVentPos();
     }
     else if(ventPotent < 210 && ventPosition > 0){
       myStepper.step(-205);
       ventPosition -= 10;
+      uartPrintVentPos();
     }
     
     // Update LCD once per minute
@@ -212,38 +219,83 @@ void loop(){
     
     if(currentState == IDLE_STATE){
       ledOFF();
+      // Turn on green led
       *PORT_B |= (1 << 4);
       setFan(0);
-      
+
+      updateWaterLevel();
+
+      // If STOP button pressed, change to disabled state
+      if(*PIN_L & 0x20){
+        changeState(DISABLED_STATE);
+      }
+      else if(water_level < water_level_threshold){
+        changeState(ERROR_STATE);
+      }
+      else if(temp > temp_threshold){
+        changeState(RUNNING_STATE);
+      }
     }
     else if (currentState == ERROR_STATE){
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("ERROR");
       ledOFF();
+      // Turn on red LED
       *PORT_B |= (1 << 6);
       setFan(0);
 
+      // Power off water level monitor
+      *PORT_C &= !(1 << 5);
+
+      // if stop pressed
       if(*PIN_L & 0x20){
         changeState(DISABLED_STATE);
+      }
+      else if(*PIN_L & 0x80){
+        changeState(IDLE_STATE);
       }
     }
     else if (currentState == RUNNING_STATE){
       ledOFF();
       *PORT_B |= (1 << 7);
       setFan(1);
-      
-      
+
+      updateWaterLevel();
+
+      // If STOP button pressed, change to disabled state
+      if(*PIN_L & 0x20){
+        changeState(DISABLED_STATE);
+      }
+      else if(water_level < water_level_threshold){
+        changeState(ERROR_STATE);
+      }
+//      else if(temp < temp_threshold){
+//        changeState(IDLE_STATE);
+//      }
     }
     
   }
-  else{
+  else if(currentState == DISABLED_STATE){
+    ledOFF();
     // Set D11 (PB5) yellow LED ON
     *PORT_B |= (1 << 5);
     setFan(0);
+
+    // Power off water level monitor
+    *PORT_C &= !(1 << 5);
 
     // if start button is pressed, set state to idle
     if(*PIN_L & 0x8){
       changeState(IDLE_STATE);
     }
   }  
+}
+
+void updateWaterLevel(){
+  // Set PC5, water level monitor power HIGH
+  *PORT_C |= (1 << 5);
+  water_level = adc_read(15);
 }
 
 void ledOFF(){
@@ -268,6 +320,30 @@ void uartPrintStr(char toPrint[]){
   }
 }
 
+void uartPrintVentPos(){
+  uartPrintStr(timeStr);
+  uartPrintStr(" -- Vent position changed to ");
+  printDigit(ventPosition);
+  uartPrintStr(" % open");
+  U0putchar('\n');
+}
+
+void printDigit(int N){
+    char arr[100];
+    int i = 0;
+    int j, r;
+  
+    while (N != 0) {
+        r = N % 10;
+        arr[i] = r + '0';
+        i++;
+        N = N / 10;
+    }
+    for (j = i - 1; j > -1; j--) {
+        U0putchar(arr[j]);
+    }
+}
+
 // Set fan state
 void setFan(bool state){
   if(state == 1){ *PORT_C |= (1 << 7); }
@@ -282,6 +358,7 @@ void setWaterSensor(bool state){
 
 // Print temperature and humidity to display
 void lcdPrintTemp(){
+  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Humidity: ");
   lcd.print(humidity, 2);
