@@ -17,9 +17,17 @@ volatile unsigned char* my_ADCSRB = (unsigned char*) 0x7B;
 volatile unsigned char* my_ADCSRA = (unsigned char*) 0x7A;
 volatile unsigned int* my_ADC_DATA = (unsigned int*) 0x78;
 
-// PORT A Registers (for fan)
-volatile unsigned char *PORT_A = (unsigned char *) 0x28;
-volatile unsigned char *DDR_A = (unsigned char *) 0x27;
+// Define PORT C Registers
+volatile unsigned char *PORT_C = (unsigned char *) 0x28;
+volatile unsigned char *DDR_C = (unsigned char *) 0x27;
+
+// Define PORT D Registers
+volatile unsigned char *PORT_D = (unsigned char *) 0x2B;
+volatile unsigned char *DDR_D = (unsigned char *) 0x2A;
+
+// Define PORT H Registers
+volatile unsigned char *PORT_H = (unsigned char *) 0x102;
+volatile unsigned char *DDR_H = (unsigned char *) 0x101;
 
 
 // Define pins
@@ -69,8 +77,11 @@ void setup(){
   // Initialize UART and set baud rate to 9600
   U0init(9600);
 
-  // Set digital pin 30 (PA7) as output
-  *DDR_A |= (1 << 7);
+  // Set digital pin 30 (PA7) as output for fan
+  *DDR_C |= (1 << 7);
+
+  // Set digital pin 7 (PH4) as input, for STOP button
+  *DDR_H &= ~(1 << 4);
 }
 
 void loop(){
@@ -119,10 +130,10 @@ void uartPrintStr(char toPrint[]){
 // Set fan state
 void setFan(bool state){
   if(state == 1){
-    *PORT_A |= (1 << 7);
+    *PORT_C |= (1 << 7);
   }
   else{
-    *PORT_A &= ~(1 << 7);
+    *PORT_C &= ~(1 << 7);
   }
 }
 
