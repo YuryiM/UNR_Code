@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <uRTCLib.h>
 #include <LiquidCrystal.h>
+#include <DHT.h>
 
 // UART Print registers
  #define RDA 0x80
@@ -49,22 +50,32 @@ volatile unsigned char *PIN_H = (unsigned char *)  0x100;
 // Define LCD pins
 LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 
+// Set up DHT11
+#define DHTPIN 34
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
 // Setup real time clock module
 uRTCLib rtc(0x68);
 // Date time char array
 char dateTimeStr[18];
+int secs_LCD_update;
 
-float temperature;
+// Declare temperature and humidity variables
+// Temperature measured in Celsius
+float temp;
 float humidity;
+
 // Define system states
 enum states{RUNNING_STATE, IDLE_STATE, DISABLED_STATE, ERROR_STATE};
 enum states currentState;
 
 void setup(){
-  // Define LCD COLS, ROWS
-  lcd.begin(16, 2);
-  lcdPrint(100.0, 100.0);
-
+  // Initialize DHT11 sensor
+  dht.begin();
+  humidity = dht.readHumidity();
+  temp = dht.readTemperature();
+  
   // Define RTC module constants and other things
   #ifdef ARDUINO_ARCH_ESP8266
     URTCLIB_WIRE.begin(0, 2); // D3 and D4 on ESP8266
@@ -73,6 +84,11 @@ void setup(){
   #endif
   //  RTCLib::set(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year)
   rtc.set(0, 51, 6, 1, 8, 5, 23);
+  secs_LCD_update = rtc.second();
+
+  // Define LCD COLS, ROWS
+  lcd.begin(16, 2);
+  lcdPrintTemp();
 
   // Set system state to disabled
   currentState = DISABLED_STATE;
@@ -110,6 +126,11 @@ void setup(){
 }
 
 void loop(){
+    humidity = dht.readHumidity();
+    temp = dht.readTemperature();
+    // Refresh LCD with new temperature/humidity info if 60sec have passed
+    if(secs_LCD_update == rtc.second()){ lcdPrintTemp(); }
+    
     if(*PIN_H & 0x10){
       setWaterSensor(1);
     }
@@ -119,7 +140,7 @@ void loop(){
     // Refresh the DS1307 RTC
     rtc.refresh();
     // Set new DateTime to global char[]
-    // Print time to serial using uartPrintStr(dateTimeStr);
+    // To print time to serial use: uartPrintStr(dateTimeStr);
     sprintf(dateTimeStr, "%02d-%02d-%02d %02d:%02d:%02d", rtc.month(), rtc.day(), rtc.year(), rtc.hour(), rtc.minute(), rtc.second());
 
     
@@ -171,15 +192,15 @@ void setWaterSensor(bool state){
 }
 
 // Print temperature and humidity to display
-void lcdPrint(){
+void lcdPrintTemp(){
   lcd.setCursor(0, 0);
   lcd.print("Humidity: ");
-  lcd.print(humidity, 1);
+  lcd.print(humidity, 2);
   lcd.print("%");
   
   lcd.setCursor(0, 1);
-  lcd.print("Temp(F): ");
-  lcd.print(temperature, 1);
+  lcd.print("Temp(C):  ");
+  lcd.print(temp, 2);
 }
 
 // UART Functions
