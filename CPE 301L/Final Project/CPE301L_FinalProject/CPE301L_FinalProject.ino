@@ -16,7 +16,7 @@ volatile unsigned int* my_ADC_DATA = (unsigned int*) 0x78;
 // Define LCD pins
 LiquidCrystal lcd(9, 8, 5, 4, 3, 2);
 
-// Setup RTC module
+// Setup real time clock module
 uRTCLib rtc(0x68);
 
 // Define system states
@@ -38,6 +38,9 @@ void setup(){
 
   // Set system state to disabled
   currentState = DISABLED_STATE;
+
+  // Initialize ADC (required)
+  adc_init();
 }
 
 void loop(){
@@ -46,25 +49,30 @@ void loop(){
       // turn on blue led
       // turn motor on
       //
-    }
-    else if (currentState = 1){
       
     }
-    else if (currentState = 2){
+    else if (currentState == 1){
       
     }
-    else if (currentState = 3){
+    else if (currentState == 2){
       
+    }
+    else if (currentState == 3){
+      // turn on yellow led
+      // don't perform temperatuer or
     }
     if (currentState != 4){
-      
+      //get humidity
+      // get temp
+      // update LCD once per minute
+      // if stop button pressed, fan turns off and system goes into disabled state
     }
   // update state if needed
 
-
-
 }
 
+
+// Print temperature and humidity to display
 void lcdPrint(float temperature, float humidity){
   lcd.setCursor(0, 0);
   lcd.print("Humidity: ");
@@ -75,6 +83,9 @@ void lcdPrint(float temperature, float humidity){
   lcd.print("Temp(F): ");
   lcd.print(temperature, 1);
 }
+
+
+// Analog - Digital Converter Functions
 
 void adc_init()
 {
