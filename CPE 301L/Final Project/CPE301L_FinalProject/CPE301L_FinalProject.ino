@@ -2,12 +2,16 @@
 #include <uRTCLib.h>
 #include <LiquidCrystal.h>
 
+// UART Print registers
+ #define RDA 0x80
+ #define TBE 0x20  
 volatile unsigned char *myUCSR0A = (unsigned char *)0x00C0;
 volatile unsigned char *myUCSR0B = (unsigned char *)0x00C1;
 volatile unsigned char *myUCSR0C = (unsigned char *)0x00C2;
 volatile unsigned int  *myUBRR0  = (unsigned int *) 0x00C4;
 volatile unsigned char *myUDR0   = (unsigned char *)0x00C6;
- 
+
+// ADC Registers
 volatile unsigned char* my_ADMUX = (unsigned char*) 0x7C;
 volatile unsigned char* my_ADCSRB = (unsigned char*) 0x7B;
 volatile unsigned char* my_ADCSRA = (unsigned char*) 0x7A;
@@ -53,6 +57,7 @@ void loop(){
     // Refresh the RTC
     rtc.refresh();
     // Set new DateTime to global char[]
+    // Print time to serial using uartPrintStr(dateTimeStr);
     sprintf(dateTimeStr, "%02d-%02d-%02d %02d:%02d:%02d", rtc.month(), rtc.day(), rtc.year(), rtc.hour(), rtc.minute(), rtc.second());
 
     
@@ -83,6 +88,13 @@ void loop(){
 
 }
 
+// Accepts char[], prints using UART
+void uartPrintStr(char toPrint[]){ 
+  for (int i = 0; i < strlen(toPrint); i++) {
+    U0putchar(toPrint[i]);      // Print each character in the array
+  }
+  U0putchar('\n');
+}
 
 // Print temperature and humidity to display
 void lcdPrint(float temperature, float humidity){
