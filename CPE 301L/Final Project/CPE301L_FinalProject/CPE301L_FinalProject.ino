@@ -2,6 +2,7 @@
 #include <uRTCLib.h>
 #include <LiquidCrystal.h>
 #include <DHT.h>
+#include <Stepper.h>
 
 // UART Print registers
  #define RDA 0x80
@@ -70,6 +71,15 @@ DHT dht(DHTPIN, DHTTYPE);
 
 int water_level_threshold = 100;
 
+// Define # of steps / revolution
+const int stepsPerRev = 2048;
+
+// Creates stepper class instance
+// Pin order in function parameters is: IN1 / IN2 / IN3 / IN4
+Stepper myStepper = Stepper(stepsPerRev, 29, 27, 25, 23);
+
+int ventPosition = 0;
+
 // Setup real time clock module
 uRTCLib rtc(0x68);
 // Time char array
@@ -114,6 +124,9 @@ void setup(){
 
   // Set initial system state to idle
   currentState = IDLE_STATE;
+
+  // Set the speed to 5 rpm:
+  myStepper.setSpeed(5);
   
   // Initialize ADC (required to work)
   adc_init();
@@ -181,8 +194,18 @@ void loop(){
     humidity = dht.readHumidity();
     temp = dht.readTemperature();
     
+    // Vent controls
+    int ventPotent = adc_read(0);
     
-    
+    if(ventPotent > 420 && ventPosition < 100){
+      Serial.println("TEST");
+      myStepper.step(205);
+      ventPosition += 10;
+    }
+    else if(ventPotent < 210 && ventPosition > 0){
+      myStepper.step(-205);
+      ventPosition -= 10;
+    }
     
     // Update LCD once per minute
     if(secs_LCD_update == rtc.second()){ lcdPrintTemp(); }
@@ -190,11 +213,13 @@ void loop(){
     if(currentState == IDLE_STATE){
       ledOFF();
       *PORT_B |= (1 << 4);
+      setFan(0);
       
     }
     else if (currentState == ERROR_STATE){
       ledOFF();
       *PORT_B |= (1 << 6);
+      setFan(0);
 
       if(*PIN_L & 0x20){
         changeState(DISABLED_STATE);
@@ -203,7 +228,8 @@ void loop(){
     else if (currentState == RUNNING_STATE){
       ledOFF();
       *PORT_B |= (1 << 7);
-
+      setFan(1);
+      
       
     }
     
@@ -217,9 +243,7 @@ void loop(){
     if(*PIN_L & 0x8){
       changeState(IDLE_STATE);
     }
-  }
-
-  
+  }  
 }
 
 void ledOFF(){
