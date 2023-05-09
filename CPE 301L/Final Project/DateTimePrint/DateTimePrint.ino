@@ -12,7 +12,7 @@
 
 // uRTCLib rtc;
 uRTCLib rtc(0x68);
-
+char dateTimeStr[18];
  #define RDA 0x80
  #define TBE 0x20  
  volatile unsigned char *myUCSR0A = (unsigned char *)0x00C0;
@@ -24,7 +24,7 @@ uRTCLib rtc(0x68);
 // main()
 //
 
-char dateTimeStr[18];
+
 void setup()
 {
   delay (500);
@@ -47,14 +47,12 @@ void loop()
   rtc.refresh();
   sprintf(dateTimeStr, "%02d-%02d-%02d %02d:%02d:%02d", rtc.month(), rtc.day(), rtc.year(), rtc.hour(), rtc.minute(), rtc.second());
 //  char test[] = rtc.year();
-  uartPrint(dateTimeStr);
+  uartPrintStr(dateTimeStr);
 //  U0putchar('\n');     // echo character  
   delay(500);
 }
 
-void uartPrint(char toPrint[]){
-  
-  
+void uartPrintStr(char toPrint[]){ 
   for (int i = 0; i < strlen(toPrint); i++) {
     U0putchar(toPrint[i]);      // Print each character in the array
   }
