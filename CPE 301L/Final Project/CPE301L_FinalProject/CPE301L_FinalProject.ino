@@ -82,7 +82,7 @@ int secs_LCD_update;
 // Declare temperature and humidity variables
 // Temperature measured in degrees Celsius
 float temp;
-float temp_threshold = 35.0;
+float temp_threshold = 26.5;
 float humidity;
 
 // Define system states
@@ -124,7 +124,7 @@ void setup(){
   EIMSK |= (1 << INT4);
 
   // Set initial system state to idle
-  currentState = IDLE_STATE;
+  currentState = DISABLED_STATE;
 
   // Set the speed to 5 rpm:
   myStepper.setSpeed(5);
@@ -236,17 +236,19 @@ void loop(){
       ledOFF();
       *PORT_B |= (1 << 7);
       setFan(1);
-
       updateWaterLevel();
 
       // If STOP button pressed, change to disabled state
       if(*PIN_L & 0x20){
+        setFan(0);
         changeState(DISABLED_STATE);
       }
-      else if(water_level < water_level_threshold){
+      if(water_level < water_level_threshold){
+        setFan(0);
         changeState(ERROR_STATE);
       }
       else if(temp < temp_threshold){
+        setFan(0);
         changeState(IDLE_STATE);
       }
     }
