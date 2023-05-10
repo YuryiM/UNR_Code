@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <uRTCLib.h>
 #include <LiquidCrystal.h>
 #include <DHT.h>
