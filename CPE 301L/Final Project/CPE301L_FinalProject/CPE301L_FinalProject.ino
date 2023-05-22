@@ -194,7 +194,7 @@ void loop(){
       ledOFF();
       // Turn on green led
       *PORT_B |= (1 << 4);
-      setFan(0);
+      setFan(1);
 
       updateWaterLevel();
       // If STOP button pressed, change to disabled state
