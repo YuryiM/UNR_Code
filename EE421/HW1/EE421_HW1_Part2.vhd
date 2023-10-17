@@ -3,13 +3,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity EE421_VHDL_HW1 is port(
+entity Part2 is port(
     v3,v2,v1,v0: in std_logic;
     d0,d1: out std_logic_vector(6 downto 0);
      v3L, v2L, v1L, v0L: out std_logic);
-end EE421_VHDL_HW1;
+end Part2;
 
-architecture structure of EE421_VHDL_HW1 is
+architecture structure of Part2 is
     component comparator is port(
         v3,v2,v1,v0: in std_logic;
         z:out std_logic);
@@ -19,18 +19,18 @@ architecture structure of EE421_VHDL_HW1 is
         v2,v1,v0: in std_logic;
         m2,m1,m0: out std_logic);
     end component;
-
+     
+    component circuitB is port(
+        z:in std_logic;
+        d1: out std_logic_vector(6 downto 0));
+     end component;
+     
     component multi2to1 is port(
         x0,x1,s: in std_logic;
         m: out std_logic);
     end component;
 
-    component circuitB is port(
-        z:in std_logic;
-        d1: out std_logic_vector(6 downto 0));
-    end component;
-
-    component Decod7seg is port(
+    component Decode7seg is port(
         a: in std_logic_vector(3 downto 0);
         f: out std_logic_vector(6 downto 0));
     end component;
@@ -52,7 +52,7 @@ begin
     L4: multi2to1 port map(v1,a1,z,m1);
     L5: multi2to1 port map(v0,a0,z,m0);
     L6: circuitB port map(z,d1);
-    L7: Decod7seg port map(temp0,d0);
+    L7: Decode7seg port map(temp0,d0);
 end structure;
 
 
@@ -90,7 +90,7 @@ end structure;
 
 
 
--- Multi2To1 Code
+-- Multiplexer Code
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -99,10 +99,10 @@ entity multi2to1 is port(
     m: out std_logic);
 end multi2to1;
 
-architecture logic of multi2to1 is
+architecture structure of multi2to1 is
 begin
     m <= x1 when (s = '1') else x0;
-end logic;
+end structure;
 
 
 
@@ -115,10 +115,10 @@ entity circuitB is port(
     d1: out std_logic_vector(6 downto 0));
 end circuitB;
 
-architecture logic of circuitB is
+architecture structure of circuitB is
 begin
     d1 <= "1111001" when (z = '1') else "1000000";
-end logic;
+end structure;
 
 
 
@@ -126,12 +126,12 @@ end logic;
 library IEEE;
 use IEEE.Std_logic_1164.all;
 
-entity Decod7seg is
+entity Decode7seg is
     port( a : in std_logic_vector(3 downto 0);
           f : out std_logic_vector(6 downto 0));
-end Decod7seg;
+end Decode7seg;
 
-architecture structure of Decod7seg is
+architecture structure of Decode7seg is
 begin
     f <= "0000001" when a = "0000" else -- 0
          "1001111" when a = "0001" else -- 1

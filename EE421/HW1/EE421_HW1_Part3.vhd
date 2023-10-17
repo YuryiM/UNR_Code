@@ -1,41 +1,40 @@
 -- Part 3
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
 
 entity EE421_VHDL_HW1 is
-    port( A, B : in STD_LOGIC_VECTOR (3 downto 0);
-          Cin : in STD_LOGIC;
-          Cout : out STD_LOGIC;
-			 AL, BL : out STD_LOGIC_VECTOR(3 downto 0);
-			 CinL : out STD_LOGIC;
-			 d0, d1: out std_logic_vector(6 downto 0));
+    port( A, B : in std_logic_vector (3 downto 0);
+          Cin : in std_logic;
+          Cout : out std_logic;
+             AL, BL : out std_logic_vector(3 downto 0);
+             CinL : out std_logic;
+             d0, d1: out std_logic_vector(6 downto 0));
 end EE421_VHDL_HW1;
 
-architecture Behavioral of EE421_VHDL_HW1 is
+architecture structure of EE421_VHDL_HW1 is
     component Full_Adder
-        port( A, B, Cin : in STD_LOGIC;
-              S, Cout : out STD_LOGIC);
+        port( A, B, Cin : in std_logic;
+              S, Cout : out std_logic);
     end component;
-	 
-	 component converter
-			port( v3,v2,v1,v0: in std_logic;
-					d0,d1: out std_logic_vector(6 downto 0));
-	 end component;
-	 
-    signal c1, c2, c3: STD_LOGIC;
-	 signal S: std_logic_vector(3 downto 0); 
+     
+     component converter
+            port( v3,v2,v1,v0: in std_logic;
+                    d0,d1: out std_logic_vector(6 downto 0));
+     end component;
+     
+    signal c1, c2, c3: std_logic;
+     signal S: std_logic_vector(3 downto 0); 
 begin
-	 
+     AL <= A;
+     BL <= B;
+     CinL <= Cin;
     FA1: Full_Adder port map( A(0), B(0), Cin, S(0), c1);
     FA2: Full_Adder port map( A(1), B(1), c1, S(1), c2);
     FA3: Full_Adder port map( A(2), B(2), c2, S(2), c3);
     FA4: Full_Adder port map( A(3), B(3), c3, S(3), Cout);
-	 AL <= A;
-	 BL <= B;
-	 CinL <= Cin;
-	 Convert1: converter port map (S(3), S(2), S(1), S(0), d0, d1);
-	 
-end Behavioral;
+     Convert1: converter port map (S(3), S(2), S(1), S(0), d0, d1);
+     
+end structure;
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -45,7 +44,7 @@ entity Full_Adder is
           S, Cout : out std_logic);
 end Full_Adder;
 
-architecture structural of Full_Adder is
+architecture structure of Full_Adder is
     signal a1, a2, a3: std_logic;
 
 begin
@@ -54,7 +53,7 @@ begin
     a3 <= a1 and Cin;
     S <= a1 xor Cin;
     Cout <= a2 or a3;
-end structural;
+end structure;
 
 
 
@@ -78,18 +77,18 @@ architecture structure of converter is
         v2,v1,v0: in std_logic;
         m2,m1,m0: out std_logic);
     end component;
+     
+     component circuitB is port(
+        z:in std_logic;
+        d1: out std_logic_vector(6 downto 0));
+    end component;
 
     component multi2to1 is port(
         x0,x1,s: in std_logic;
         m: out std_logic);
     end component;
-
-    component circuitB is port(
-        z:in std_logic;
-        d1: out std_logic_vector(6 downto 0));
-    end component;
-
-    component Decod7seg is port(
+    
+    component Decode7Seg is port(
         a: in std_logic_vector(3 downto 0);
         f: out std_logic_vector(6 downto 0));
     end component;
@@ -107,7 +106,7 @@ begin
     L4: multi2to1 port map(v1,a1,z,m1);
     L5: multi2to1 port map(v0,a0,z,m0);
     L6: circuitB port map(z,d1);
-    L7: Decod7seg port map(temp0,d0);
+    L7: Decode7Seg port map(temp0,d0);
 end structure;
 
 
@@ -145,7 +144,7 @@ end structure;
 
 
 
--- Multi2To1 Code
+-- Multiplexer Code
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -154,10 +153,10 @@ entity multi2to1 is port(
     m: out std_logic);
 end multi2to1;
 
-architecture logic of multi2to1 is
+architecture structure of multi2to1 is
 begin
     m <= x1 when (s = '1') else x0;
-end logic;
+end structure;
 
 
 
@@ -170,10 +169,10 @@ entity circuitB is port(
     d1: out std_logic_vector(6 downto 0));
 end circuitB;
 
-architecture logic of circuitB is
+architecture structure of circuitB is
 begin
     d1 <= "1111001" when (z = '1') else "1000000";
-end logic;
+end structure;
 
 
 
@@ -181,12 +180,12 @@ end logic;
 library IEEE;
 use IEEE.Std_logic_1164.all;
 
-entity Decod7seg is
+entity Decode7Seg is
     port( a : in std_logic_vector(3 downto 0);
           f : out std_logic_vector(6 downto 0));
-end Decod7seg;
+end Decode7Seg;
 
-architecture structure of Decod7seg is
+architecture structure of Decode7Seg is
 begin
     f <= "0000001" when a = "0000" else -- 0
          "1001111" when a = "0001" else -- 1
