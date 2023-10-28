@@ -61,16 +61,6 @@ set_location_assignment PIN_AC9 -to A[3]
 set_location_assignment PIN_AE11 -to A[2]
 set_location_assignment PIN_AD12 -to A[1]
 set_location_assignment PIN_AD11 -to A[0]
-set_location_assignment PIN_W20 -to AL[3]
-set_location_assignment PIN_Y19 -to AL[2]
-set_location_assignment PIN_W19 -to AL[1]
-set_location_assignment PIN_W17 -to AL[0]
-set_location_assignment PIN_V18 -to BL[3]
-set_location_assignment PIN_V17 -to BL[2]
-set_location_assignment PIN_W16 -to BL[1]
-set_location_assignment PIN_V16 -to BL[0]
-set_location_assignment PIN_AA14 -to Cin
-set_location_assignment PIN_AA25 -to CinL
 set_location_assignment PIN_AD27 -to d1[6]
 set_location_assignment PIN_AF30 -to d1[5]
 set_location_assignment PIN_AF29 -to d1[4]
@@ -87,8 +77,6 @@ set_location_assignment PIN_AE27 -to d0[1]
 set_location_assignment PIN_AE26 -to d0[0]
 set_location_assignment PIN_AD10 -to sel[0]
 set_location_assignment PIN_AE12 -to sel[1]
-set_location_assignment PIN_Y21 -to selLED[1]
-set_location_assignment PIN_W21 -to selLED[0]
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -entity Project1 -section_id Top
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
@@ -114,4 +102,16 @@ set_location_assignment PIN_W22 -to d4[3]
 set_location_assignment PIN_W24 -to d4[4]
 set_location_assignment PIN_V23 -to d4[5]
 set_location_assignment PIN_W25 -to d4[6]
+set_location_assignment PIN_Y19 -to A_LED[2]
+set_location_assignment PIN_W20 -to A_LED[3]
+set_location_assignment PIN_W19 -to A_LED[1]
+set_location_assignment PIN_W17 -to A_LED[0]
+set_location_assignment PIN_V18 -to B_LED[3]
+set_location_assignment PIN_V17 -to B_LED[2]
+set_location_assignment PIN_W16 -to B_LED[1]
+set_location_assignment PIN_V16 -to B_LED[0]
+set_location_assignment PIN_AA14 -to CinButton
+set_location_assignment PIN_AA25 -to Cin_LED
+set_location_assignment PIN_Y21 -to sel_LED[1]
+set_location_assignment PIN_W21 -to sel_LED[0]
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
