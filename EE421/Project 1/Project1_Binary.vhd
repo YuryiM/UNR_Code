@@ -71,7 +71,17 @@ end multi2to1fourbit;
 
 architecture logic of multi2to1fourbit is
 begin
-    m <= x0 when (s = '1') else x1;
+m(0) <= (not s and x1(0)) or
+		(s and x0(0));
+		
+m(1) <= (not s and x1(1)) or
+		(s and x0(1));
+		
+m(2) <= (not s and x1(2)) or
+		(s and x0(2));
+		
+m(3) <= (not s and x1(3)) or
+		(s and x0(3));
 end logic;
 
 
@@ -87,11 +97,22 @@ end multi3to1;
 
 architecture logic of multi3to1 is
 begin
-with s select
-    m <= x when "01",
-			not x when "10",
-			"0000" when "00",
-			"XXXX" when others;
+
+m(0) <= (not s(1) and not s(0) and '0') or
+		(x(0) and not s(1) and s(0)) or
+		(not x(0) and s(1) and not s(0));
+		
+m(1) <= (not s(1) and not s(0) and '0') or
+		(x(1) and not s(1) and s(0)) or
+		(not x(1) and s(1) and not s(0));
+		
+m(2) <= (not s(1) and not s(0) and '0') or
+		(x(2) and not s(1) and s(0)) or
+		(not x(2) and s(1) and not s(0));
+		
+m(3) <= (not s(1) and not s(0) and '0') or
+		(x(3) and not s(1) and s(0)) or
+		(not x(3) and s(1) and not s(0));
 end logic;
 
 -- Full Adder
