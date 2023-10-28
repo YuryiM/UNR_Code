@@ -4,11 +4,11 @@ use ieee.std_logic_1164.all;
 
 entity Project1_Binary is port(
 	sel: in std_logic_vector(1 downto 0);
-	Cin: in std_logic;
+	CinButton: in std_logic;
 	A, B: in std_logic_vector(3 downto 0);
-	AL, BL: out std_logic_vector(3 downto 0);
-	CinL: out std_logic;
-	selLED: out std_logic_vector(1 downto 0);
+	A_LED, B_LED: out std_logic_vector(3 downto 0);
+	Cin_LED: out std_logic;
+	sel_LED: out std_logic_vector(1 downto 0);
 	d0, d1, d2, d3, d4: out std_logic_vector(6 downto 0));
 end Project1_Binary;
 
@@ -33,30 +33,29 @@ architecture logic of Project1_Binary is
 	 component Decod7seg
 			port( A : in std_logic_vector(3 downto 0);
 					Cout: in std_logic;
-          f0,f1,f2,f3,f4 : out std_logic_vector(6 downto 0));
+					f0,f1,f2,f3,f4 : out std_logic_vector(6 downto 0));
 	 end component;
-	 signal D, C, B0, S, cXOR: std_logic_vector(3 downto 0);
-	 signal c0,c1, c2, c3, Cin0, Cout, sel3: std_logic;
+	 signal mux2out, B_twos, sum, cXOR: std_logic_vector(3 downto 0);
+	 signal c1, c2, c3, Cin, Cout, sel2: std_logic;
 begin
-	CinL <= Cin;
-	Cin0 <= not Cin;
-	selLED <= sel;
-	AL <= A;
-	BL <= B;
-	sel3 <= sel(0) AND sel(1);
+	Cin <= not CinButton;
+	Cin_LED <= CinButton;
+	sel_LED <= sel;
+	A_LED <= A;
+	B_LED <= B;
+	sel2 <= sel(0) AND sel(1);
 	cXOR <= A XOR B;
---	CoutLED <= not Cout;
 	
-	Multi3: multi3to1 port map(B, sel, B0);
+	Multi3: multi3to1 port map(B, sel, B_twos);
 	
-	FA1: Full_Adder port map( A(0), B0(0), Cin0, S(0), c1);
-	FA2: Full_Adder port map( A(1), B0(1), c1, S(1), c2);
-	FA3: Full_Adder port map( A(2), B0(2), c2, S(2), c3);
-	FA4: Full_Adder port map( A(3), B0(3), c3, S(3), Cout);
+	FA1: Full_Adder port map( A(0), B_twos(0), Cin, sum(0), c1);
+	FA2: Full_Adder port map( A(1), B_twos(1), c1, sum(1), c2);
+	FA3: Full_Adder port map( A(2), B_twos(2), c2, sum(2), c3);
+	FA4: Full_Adder port map( A(3), B_twos(3), c3, sum(3), Cout);
 	
-	Multi2: multi2to1fourbit port map(cXOR, S, sel3, D); 
+	Multi2: multi2to1fourbit port map(cXOR, sum, sel2, mux2out); 
 	
-	Decode: Decod7seg port map(D, Cout, d0, d1, d2, d3, d4);
+	Decode: Decod7seg port map(mux2out, Cout, d0, d1, d2, d3, d4);
 end logic; 
 
 
