@@ -85,7 +85,7 @@ m(3) <= (not s and x1(3)) or
 end logic;
 
 
--- Multiplexer 3 to 1 
+-- Multiplexer 4 to 1 4 bit
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -135,20 +135,6 @@ begin
     S <= a1 xor Cin;
     Cout <= a2 or a3;
 end structural;
-
--- Multi2To1 Code
-library ieee;
-use ieee.std_logic_1164.all;
-
-entity multi2to1 is port(
-    x0, x1, s: in std_logic;
-    m: out std_logic);
-end multi2to1;
-
-architecture structure of multi2to1 is
-begin
-    m <= x1 when (s = '1') else x0;
-end structure;
 
 -- Decode7Seg Code
 library IEEE;
